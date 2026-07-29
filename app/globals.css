@@ -1,0 +1,133 @@
+@import "./reference.css";
+
+:root {
+  --black: #000;
+  --white: #fff;
+  --black-01: #00000003;
+  --black-02: #00000005;
+  --black-03: #00000008;
+  --black-04: #0000000a;
+  --black-05: #0000000d;
+  --black-06: #0000000f;
+  --black-07: #00000012;
+  --black-08: #00000014;
+  --black-09: #00000017;
+  --black-10: #0000001a;
+  --black-20: #0003;
+  --black-30: #0000004d;
+  --black-40: #0006;
+  --black-50: #00000080;
+  --black-60: #0009;
+  --black-70: #000000b3;
+  --black-80: #000c;
+  --black-90: #000000e6;
+  --black-100: #000;
+  --white-01: #ffffff03;
+  --white-02: #ffffff05;
+  --white-03: #ffffff08;
+  --white-04: #ffffff0a;
+  --white-05: #ffffff0d;
+  --white-06: #ffffff0f;
+  --white-07: #ffffff12;
+  --white-08: #ffffff14;
+  --white-09: #ffffff17;
+  --white-10: #ffffff1a;
+  --white-20: #fff3;
+  --white-30: #ffffff4d;
+  --white-40: #fff6;
+  --white-50: #ffffff80;
+  --white-60: #fff9;
+  --white-70: #ffffffb3;
+  --white-80: #fffc;
+  --white-90: #ffffffe6;
+  --white-100: #fff;
+  --radius-squircle-factor: 1;
+  --radius: calc(12px * var(--radius-squircle-factor));
+}
+
+@supports (corner-shape: squircle) {
+  :root { --radius-squircle-factor: 1.8; }
+  .squircle { corner-shape: squircle; }
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+html, body {
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--white);
+  color: var(--black);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  transition: background-color 0.18s, color 0.18s;
+}
+
+html[data-theme="dark"] body { background: var(--black); color: var(--white); }
+a { color: inherit; text-decoration: none; }
+button, a { -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
+button:focus, a:focus { outline: none; }
+button { font: inherit; color: inherit; cursor: pointer; background: none; border: 0; padding: 0; }
+ul, ol { margin: 0; padding: 0; list-style: none; }
+h1, h2, h3, h4, p { margin: 0; }
+img { max-width: 100%; }
+
+@keyframes yf-title-in-forward {
+  from { opacity: 0; transform: translateY(110%); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes yf-title-out-forward {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-110%); }
+}
+@keyframes yf-title-in-backward {
+  from { opacity: 0; transform: translateY(-110%); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes yf-title-out-backward {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(110%); }
+}
+@keyframes yf-meta-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes yf-meta-fade-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes yf-tip-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes yf-tip-out {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-4px); }
+}
+
+.yf-title-layer {
+  grid-area: 1 / 1;
+  animation-duration: 0.32s;
+  animation-timing-function: cubic-bezier(.22, 1, .36, 1);
+  animation-fill-mode: both;
+}
+.yf-title-layer[data-motion="in-forward"] { animation-name: yf-title-in-forward; }
+.yf-title-layer[data-motion="out-forward"] { animation-name: yf-title-out-forward; }
+.yf-title-layer[data-motion="in-backward"] { animation-name: yf-title-in-backward; }
+.yf-title-layer[data-motion="out-backward"] { animation-name: yf-title-out-backward; }
+.yf-artist-layer { grid-area: 1 / 1; animation-duration: .28s; animation-timing-function: ease-in-out; animation-fill-mode: both; }
+.yf-artist-layer[data-motion="in"] { animation-name: yf-meta-fade; }
+.yf-artist-layer[data-motion="out"] { animation-name: yf-meta-fade-out; }
+.yf-about-enter { animation: yf-tip-in .18s cubic-bezier(.22, 1, .36, 1) both; }
+.yf-about-exit { animation: yf-tip-out .18s cubic-bezier(.22, 1, .36, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .yf-title-layer, .yf-artist-layer, .yf-about-enter, .yf-about-exit { animation: none; }
+}
