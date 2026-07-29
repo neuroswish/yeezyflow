@@ -4,8 +4,9 @@ import { FlowExperience } from "./flow-experience";
 
 type TrackIdentifier = { id: string };
 const tracks = tracksJson as TrackIdentifier[];
-const description = "A curated, interactive index of 55 Kanye West tracks spanning 2004 to 2026.";
-const rootImage = "/opengraph-image?5bd683d04aac139f";
+const description = "YeezyFlow: Explore Ye's Discography";
+const rootImage = "/opengraph-image?d88828cf234adaa8";
+const rootImageAlt = "Kanye West with his arms raised in a crowd";
 
 export const metadata: Metadata = {
   title: "yeezyflow",
@@ -16,13 +17,13 @@ export const metadata: Metadata = {
     url: "/",
     siteName: "yeezyflow",
     type: "website",
-    images: [{ url: rootImage, type: "image/png", width: 2400, height: 1350, alt: "yeezyflow" }],
+    images: [{ url: rootImage, type: "image/png", width: 1200, height: 630, alt: rootImageAlt }],
   },
   twitter: {
     card: "summary_large_image",
     title: "yeezyflow",
     description,
-    images: [{ url: rootImage, type: "image/png", width: 2400, height: 1350, alt: "yeezyflow" }],
+    images: [{ url: rootImage, type: "image/png", width: 1200, height: 630, alt: rootImageAlt }],
   },
 };
 

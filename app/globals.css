@@ -132,3 +132,11 @@ img { max-width: 100%; }
 @media (prefers-reduced-motion: reduce) {
   .yf-title-layer, .yf-album-layer, .yf-artist-layer, .yf-about-enter, .yf-about-exit { animation: none; }
 }
+
+@media (min-width: 768px) {
+  .FloatingBarPlayer-module-scss-module__axPgMG__dock {
+    left: 0;
+    right: 0;
+    justify-content: center;
+  }
+}

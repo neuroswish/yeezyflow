@@ -69,10 +69,10 @@ test("server-renders the complete Yeezyflow shell and root metadata", async () =
   const html = await response.text();
 
   assert.match(html, /<title>yeezyflow<\/title>/i);
-  assert.match(html, /55 Kanye West tracks spanning 2004 to 2026/);
+  assert.match(html, /YeezyFlow: Explore Ye&#x27;s Discography/);
   assert.match(html, /mobile-web-app-capable/);
   assert.match(html, /apple-mobile-web-app-title/);
-  assert.match(html, /opengraph-image\?5bd683d04aac139f/);
+  assert.match(html, /opengraph-image\?d88828cf234adaa8/);
   assert.match(html, />Runaway</);
   assert.match(html, />My Beautiful Dark Twisted Fantasy</);
   assert.match(html, />Kanye West</);
@@ -144,7 +144,8 @@ test("ships a complete, route-safe catalog and every referenced asset", async ()
     "icons/pwa/android-chrome-512x512.png",
   ].map((asset) => access(new URL(asset, publicRoot))));
 
-  assert.deepEqual(pngSize(await readFile(new URL("opengraph-image.png", publicRoot))), { width: 2400, height: 1350 });
+  assert.deepEqual(pngSize(await readFile(new URL("opengraph-image.png", publicRoot))), { width: 1200, height: 630 });
+  assert.deepEqual(pngSize(await readFile(new URL("icon-source.png", publicRoot))), { width: 512, height: 512 });
   assert.deepEqual(pngSize(await readFile(new URL("icons/pwa/android-chrome-192x192.png", publicRoot))), { width: 192, height: 192 });
   assert.deepEqual(pngSize(await readFile(new URL("icons/pwa/android-chrome-512x512.png", publicRoot))), { width: 512, height: 512 });
   assert.deepEqual(pngSize(await readFile(new URL("apple-icon.png", publicRoot))), { width: 180, height: 180 });
@@ -152,13 +153,14 @@ test("ships a complete, route-safe catalog and every referenced asset", async ()
   const manifest = JSON.parse(await readFile(new URL("manifest.webmanifest", publicRoot), "utf8"));
   assert.equal(manifest.name, "yeezyflow");
   assert.equal(manifest.short_name, "yeezyflow");
+  assert.equal(manifest.description, "YeezyFlow: Explore Ye's Discography");
   assert.equal((await readFile(new URL("package.json", projectRoot), "utf8")).includes("react-loading-skeleton"), false);
   assert.ok((await stat(new URL("favicon.ico", publicRoot))).size > 100);
 });
 
 test("serves byte-identical social cards from the public metadata routes", async () => {
   for (const [route, source] of [
-    ["/opengraph-image?5bd683d04aac139f", "opengraph-image.png"],
+    ["/opengraph-image?d88828cf234adaa8", "opengraph-image.png"],
     ["/runaway/opengraph-image?30c237afccd2e788", "og-tracks/runaway.png"],
   ]) {
     const response = await fetch(new URL(route, baseUrl));
@@ -184,6 +186,11 @@ test("keeps snap metadata monotonic and album transitions literal", async () => 
   assert.match(flowSource, /data-meta-transition="album"/);
   assert.match(flowSource, /className=\{`\$\{C\.meta\.album\} yf-album-layer`\}/);
   assert.match(styles, /\.yf-title-layer,\s*\.yf-album-layer\s*\{/);
+});
+
+test("centers the desktop mini player without changing its mobile dock", async () => {
+  const styles = await readFile(new URL("app/globals.css", projectRoot), "utf8");
+  assert.match(styles, /@media \(min-width: 768px\)\s*\{\s*\.FloatingBarPlayer-module-scss-module__axPgMG__dock\s*\{[^}]*left:\s*0;[^}]*right:\s*0;[^}]*justify-content:\s*center;/s);
 });
 
 test("contains no retired catalog assets or source identity", async () => {

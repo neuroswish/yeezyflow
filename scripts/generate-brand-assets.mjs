@@ -8,6 +8,7 @@ const root = process.cwd();
 const coversDir = path.join(root, "public/covers");
 const socialDir = path.join(root, "public/og-tracks");
 const tracks = JSON.parse(await readFile(path.join(root, "app/data/tracks.json"), "utf8"));
+const iconsOnly = process.argv.includes("--icons-only");
 
 await mkdir(socialDir, { recursive: true });
 await mkdir(path.join(root, "public/icons/pwa"), { recursive: true });
@@ -44,43 +45,10 @@ const roundedCover = async (cover, size) => {
     .toBuffer();
 };
 
-const rootBackground = Buffer.from(`
-  <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <radialGradient id="wash" cx="64%" cy="48%" r="72%">
-        <stop offset="0" stop-color="#ffffff"/>
-        <stop offset="1" stop-color="#eee7d8"/>
-      </radialGradient>
-    </defs>
-    <rect width="100%" height="100%" fill="url(#wash)"/>
-    <text x="150" y="205" font-family="Arial, Helvetica, sans-serif" font-size="132" font-weight="700" letter-spacing="-8" fill="#111111">yeezyflow</text>
-    <text x="159" y="276" font-family="Arial, Helvetica, sans-serif" font-size="31" font-weight="500" letter-spacing="5" fill="#111111" opacity=".54">55 TRACKS  ·  17 RELEASES  ·  2004—2026</text>
-    <text x="2240" y="1215" text-anchor="end" font-family="Arial, Helvetica, sans-serif" font-size="28" fill="#111111" opacity=".42">A CURATED KANYE WEST INDEX</text>
-  </svg>
-`);
+// The root Open Graph image is a supplied editorial asset. Preserve
+// public/opengraph-image.png when regenerating track cards and app icons.
 
-const collage = [
-  ["the-college-dropout", 340, -10, 110, 610],
-  ["graduation", 395, -6, 410, 510],
-  ["808s-and-heartbreak", 420, -2, 755, 450],
-  ["my-beautiful-dark-twisted-fantasy", 470, 1, 1120, 410],
-  ["yeezus", 420, 5, 1510, 465],
-  ["the-life-of-pablo", 380, 8, 1840, 560],
-];
-
-const collageInputs = [];
-for (const [cover, size, angle, left, top] of collage) {
-  const image = await roundedCover(cover, size);
-  const rotated = await sharp(image).rotate(angle, { background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer();
-  collageInputs.push({ input: rotated, left, top });
-}
-
-await sharp(rootBackground)
-  .composite(collageInputs)
-  .png({ compressionLevel: 9 })
-  .toFile(path.join(root, "public/opengraph-image.png"));
-
-for (const track of tracks) {
+for (const track of iconsOnly ? [] : tracks) {
   const coverPath = path.join(coversDir, `${track.cover}.jpg`);
   const backdrop = await sharp(coverPath)
     .resize(WIDTH, HEIGHT, { fit: "cover" })
@@ -116,19 +84,21 @@ for (const track of tracks) {
     .toFile(path.join(socialDir, `${track.id}.png`));
 }
 
-const iconSvg = Buffer.from(`
+const placeholderSvg = Buffer.from(`
   <svg width="512" height="512" xmlns="http://www.w3.org/2000/svg">
     <rect width="512" height="512" rx="112" fill="#efe7d7"/>
     <circle cx="256" cy="256" r="184" fill="#111111"/>
     <text x="256" y="302" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="164" font-weight="700" letter-spacing="-12" fill="#efe7d7">yf</text>
   </svg>
 `);
-const icon512 = await sharp(iconSvg).png().toBuffer();
+const placeholder512 = await sharp(placeholderSvg).png().toBuffer();
+const iconSource = await readFile(path.join(root, "public/icon-source.png"));
+const icon512 = await sharp(iconSource).resize(512, 512, { fit: "cover" }).png().toBuffer();
 await writeFile(path.join(root, "public/icon-source.png"), icon512);
 await sharp(icon512).resize(512, 512).png().toFile(path.join(root, "public/icons/pwa/android-chrome-512x512.png"));
 await sharp(icon512).resize(192, 192).png().toFile(path.join(root, "public/icons/pwa/android-chrome-192x192.png"));
 await sharp(icon512).resize(180, 180).png().toFile(path.join(root, "public/apple-icon.png"));
-await sharp(icon512).resize(1200, 1200).flatten({ background: "#efe7d7" }).jpeg({ quality: 90 }).toFile(path.join(coversDir, "placeholder.jpg"));
+await sharp(placeholder512).resize(1200, 1200).flatten({ background: "#efe7d7" }).jpeg({ quality: 90 }).toFile(path.join(coversDir, "placeholder.jpg"));
 
 const faviconPng = await sharp(icon512).resize(64, 64).png().toBuffer();
 const header = Buffer.alloc(22);
@@ -145,4 +115,6 @@ header.writeUInt32LE(faviconPng.length, 14);
 header.writeUInt32LE(22, 18);
 await writeFile(path.join(root, "public/favicon.ico"), Buffer.concat([header, faviconPng]));
 
-console.log(`Generated Yeezyflow identity, ${tracks.length} social cards, and PWA icons.`);
+console.log(iconsOnly
+  ? "Generated Yeezyflow app icons."
+  : `Generated ${tracks.length} track cards and Yeezyflow app icons; preserved the root social image.`);

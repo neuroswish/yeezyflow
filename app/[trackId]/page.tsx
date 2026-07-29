@@ -5,7 +5,7 @@ import { FlowExperience } from "../flow-experience";
 
 type TrackMeta = { id: string; title: string; note: string };
 const tracks = tracksJson as TrackMeta[];
-const description = "A curated, interactive index of 55 Kanye West tracks spanning 2004 to 2026.";
+const description = "YeezyFlow: Explore Ye's Discography";
 
 function socialImage(trackId: string) {
   return {
@@ -26,11 +26,11 @@ export async function generateMetadata({ params }: { params: Promise<{ trackId: 
   const track = tracks.find((candidate) => candidate.id === trackId);
   if (!track) {
     const image = {
-      url: "/opengraph-image?5bd683d04aac139f",
+      url: "/opengraph-image?d88828cf234adaa8",
       type: "image/png" as const,
-      width: 2400,
-      height: 1350,
-      alt: "yeezyflow",
+      width: 1200,
+      height: 630,
+      alt: "Kanye West with his arms raised in a crowd",
     };
     return {
       title: "Not found · yeezyflow",

@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
+const description = "YeezyFlow: Explore Ye's Discography";
+const iconVersion = "1aedc036c539a92c";
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://yeezyflow.vercel.app"),
   title: "yeezyflow",
-  description: "A curated, interactive index of 55 Kanye West tracks spanning 2004 to 2026.",
+  description,
   applicationName: "yeezyflow",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
@@ -14,10 +17,10 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "48x48", type: "image/x-icon" },
-      { url: "/icon-source.png", sizes: "512x512", type: "image/png" },
+      { url: `/favicon.ico?${iconVersion}`, sizes: "64x64", type: "image/x-icon" },
+      { url: `/icon-source.png?${iconVersion}`, sizes: "512x512", type: "image/png" },
     ],
-    apple: { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
+    apple: { url: `/apple-icon.png?${iconVersion}`, sizes: "180x180", type: "image/png" },
   },
 };
 
