@@ -776,6 +776,10 @@ function CoverFlow({
   const settlePosition = useCallback((position: number) => {
     if (!length) return 0;
     const destination = Math.round(position / spacing) * spacing;
+    // The snapped index owns metadata while the spring finishes. Without this
+    // guard, the first release frames can still round to the card we just left
+    // and briefly emit old -> new -> old -> new on slower/mobile displays.
+    programmaticRef.current = true;
     setTarget(destination);
     const index = modulo(Math.round(destination / spacing), length);
     if (index !== activeRef.current) {
@@ -1038,47 +1042,6 @@ function CoverFlow({
   );
 }
 
-function randomCharacter(character: string) {
-  if (character === " " || character === "-" || character === "'") return character;
-  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  const pool = character === character.toUpperCase() && character !== character.toLowerCase()
-    ? alphabet.slice(0, 26)
-    : character === character.toLowerCase() && character !== character.toUpperCase()
-      ? alphabet.slice(26, 52)
-      : alphabet;
-  return pool[Math.floor(Math.random() * pool.length)] ?? character;
-}
-
-function ScrambledAlbum({ text }: { text: string }) {
-  const [visible, setVisible] = useState(text);
-  const previousRef = useRef(text);
-  useEffect(() => {
-    if (text === previousRef.current) return;
-    previousRef.current = text;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setVisible(text);
-      return;
-    }
-    setVisible(Array.from(text, randomCharacter).join(""));
-    let step = 0;
-    const timer = window.setInterval(() => {
-      step += 1;
-      if (step <= 2) {
-        setVisible(Array.from(text, randomCharacter).join(""));
-        return;
-      }
-      const reveal = Math.ceil(((step - 2) / 4) * text.length);
-      setVisible(Array.from(text, (character, index) => index < reveal ? character : randomCharacter(character)).join(""));
-      if (step >= 6) {
-        window.clearInterval(timer);
-        setVisible(text);
-      }
-    }, 18);
-    return () => window.clearInterval(timer);
-  }, [text]);
-  return <p className={C.meta.album} aria-label={text}>{visible}</p>;
-}
-
 function AnimatedNumber({ value, format = String }: { value: number; format?: (value: number) => string }) {
   const [visible, setVisible] = useState(value);
   const previousRef = useRef(value);
@@ -1119,39 +1082,80 @@ function formatDuration(value: number) {
   return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
 }
 
-function AnimatedTitle({ track, direction }: { track: Track; direction: number }) {
-  const [state, setState] = useState<{ current: Track; old: Track | null; direction: number }>({ current: track, old: null, direction });
+function AnimatedHeading({ track, direction }: { track: Track; direction: number }) {
+  const [state, setState] = useState<{
+    current: Track;
+    old: Track | null;
+    direction: number;
+    revision: number;
+  }>({ current: track, old: null, direction, revision: 0 });
   const previousTrackRef = useRef(track);
   const directionRef = useRef(direction);
-  useEffect(() => { directionRef.current = direction; }, [direction]);
-  useEffect(() => {
-    const old = previousTrackRef.current;
-    if (old.id === track.id) return;
+  useLayoutEffect(() => { directionRef.current = direction; }, [direction]);
+  useLayoutEffect(() => {
+    if (previousTrackRef.current.id === track.id) return;
     previousTrackRef.current = track;
-    setState({ current: track, old, direction: directionRef.current });
-    const timer = window.setTimeout(() => setState((current) => ({ ...current, old: null })), 330);
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setState((current) => ({
+      current: track,
+      old: reducedMotion ? null : current.current,
+      direction: directionRef.current,
+      revision: current.revision + 1,
+    }));
+    if (reducedMotion) return;
+    const timer = window.setTimeout(() => {
+      setState((current) => current.current.id === track.id ? { ...current, old: null } : current);
+    }, 330);
     return () => window.clearTimeout(timer);
   }, [track]);
   const forward = state.direction >= 0;
+  const incomingMotion = state.old ? (forward ? "in-forward" : "in-backward") : undefined;
+  const outgoingMotion = forward ? "out-forward" : "out-backward";
   return (
-    <div className={C.meta.titleRoll}>
-      {state.old ? (
+    <>
+      <div className={C.meta.titleRoll} data-meta-transition="title">
+        {state.old ? (
+          <h1
+            key={`title-old-${state.revision}-${state.old.id}`}
+            className={`${C.meta.title} yf-title-layer`}
+            data-motion={outgoingMotion}
+            data-track-id={state.old.id}
+            aria-hidden="true"
+          >
+            {state.old.title}
+          </h1>
+        ) : null}
         <h1
+          key={`title-current-${state.revision}-${state.current.id}`}
           className={`${C.meta.title} yf-title-layer`}
-          data-motion={forward ? "out-forward" : "out-backward"}
-          aria-hidden="true"
+          data-motion={incomingMotion}
+          data-track-id={state.current.id}
         >
-          {state.old.title}
+          {state.current.title}
         </h1>
-      ) : null}
-      <h1
-        key={state.current.id}
-        className={`${C.meta.title} yf-title-layer`}
-        data-motion={state.old ? (forward ? "in-forward" : "in-backward") : undefined}
-      >
-        {state.current.title}
-      </h1>
-    </div>
+      </div>
+      <div className={C.meta.titleRoll} data-meta-transition="album">
+        {state.old ? (
+          <p
+            key={`album-old-${state.revision}-${state.old.id}`}
+            className={`${C.meta.album} yf-album-layer`}
+            data-motion={outgoingMotion}
+            data-track-id={state.old.id}
+            aria-hidden="true"
+          >
+            {state.old.project}
+          </p>
+        ) : null}
+        <p
+          key={`album-current-${state.revision}-${state.current.id}`}
+          className={`${C.meta.album} yf-album-layer`}
+          data-motion={incomingMotion}
+          data-track-id={state.current.id}
+        >
+          {state.current.project}
+        </p>
+      </div>
+    </>
   );
 }
 
@@ -1162,7 +1166,7 @@ function artistLabel(track: Track) {
 function AnimatedArtist({ track }: { track: Track }) {
   const [state, setState] = useState<{ current: Track; old: Track | null }>({ current: track, old: null });
   const previousTrackRef = useRef(track);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const old = previousTrackRef.current;
     if (old.id === track.id) return;
     previousTrackRef.current = track;
@@ -1189,8 +1193,7 @@ function TrackMeta({ track, direction }: { track: Track; direction: number }) {
     <div className={C.meta.meta}>
       <div className={C.meta.inner}>
         <div className={C.meta.heading}>
-          <AnimatedTitle track={track} direction={direction} />
-          <ScrambledAlbum text={track.project} />
+          <AnimatedHeading track={track} direction={direction} />
         </div>
         <dl className={C.meta.details}>
           <div className={C.meta.detail}>

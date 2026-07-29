@@ -169,6 +169,23 @@ test("serves byte-identical social cards from the public metadata routes", async
   }
 });
 
+test("keeps snap metadata monotonic and album transitions literal", async () => {
+  const flowSource = await readFile(new URL("app/flow-experience.tsx", projectRoot), "utf8");
+  const styles = await readFile(new URL("app/globals.css", projectRoot), "utf8");
+  const settleStart = flowSource.indexOf("const settlePosition = useCallback");
+  const settleEnd = flowSource.indexOf("const snapToIndex = useCallback", settleStart);
+  assert.ok(settleStart >= 0 && settleEnd > settleStart, "missing coverflow settle implementation");
+  const settleSource = flowSource.slice(settleStart, settleEnd);
+  const ownershipGuard = settleSource.indexOf("programmaticRef.current = true");
+  const springTarget = settleSource.indexOf("setTarget(destination)");
+  assert.ok(ownershipGuard >= 0 && ownershipGuard < springTarget, "snap target must suppress stale spring index emissions");
+
+  assert.doesNotMatch(flowSource, /function\s+(?:ScrambledAlbum|randomCharacter)\b/);
+  assert.match(flowSource, /data-meta-transition="album"/);
+  assert.match(flowSource, /className=\{`\$\{C\.meta\.album\} yf-album-layer`\}/);
+  assert.match(styles, /\.yf-title-layer,\s*\.yf-album-layer\s*\{/);
+});
+
 test("contains no retired catalog assets or source identity", async () => {
   const coverNames = await readdir(new URL("covers/", publicRoot));
   const cardNames = await readdir(new URL("og-tracks/", publicRoot));
